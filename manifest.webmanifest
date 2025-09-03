@@ -1,0 +1,23 @@
+{
+  "name": "Fupa Snack — Aplikasi Presensi",
+  "short_name": "FupaSnack",
+  "description": "Aplikasi installable untuk presensi dan administrasi Fupa Snack",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fff7cc",
+  "theme_color": "#ffd54f",
+  "icons": [
+    {
+      "src": "https://res.cloudinary.com/dn2o2vf04/image/upload/v001/fupa-snack-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://res.cloudinary.com/dn2o2vf04/image/upload/v001/fupa-snack-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

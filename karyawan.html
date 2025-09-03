@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FUPA Snack — Karyawan</title>
+  <meta name="theme-color" content="#ffd54f" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg1: #fff7cc; --bg2: #ffffff;
+      --brand: #0a66c2; --accent: #ffb300;
+      --ink: #0f172a; --muted: #64748b;
+      --ok: #16a34a; --warn: #f59e0b; --err: #ef4444;
+      --card: #ffffffcc; --ring: #0a66c233;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    html,body { height:100%; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--ink);
+      background: linear-gradient(160deg,var(--bg1),var(--bg2)); overflow-x:hidden; }
+    .smoke {
+      position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(255,255,255,0.6), transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.5), transparent 60%),
+        radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.6), transparent 60%);
+      animation: float 16s ease-in-out infinite alternate;
+      filter: blur(10px); z-index:0;
+    }
+    @keyframes float { from{transform:translateY(-10px)} to{transform:translateY(10px)} }
+
+    nav {
+      position:sticky; top:0; z-index:10;
+      backdrop-filter:saturate(1.2) blur(6px);
+      background:var(--card); border-bottom:1px solid rgba(0,0,0,.04);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 20px; height:60px; box-shadow:var(--shadow);
+    }
+    .logo { font-size:20px; font-weight:700; color:var(--brand); }
+    .nav-actions { display:flex; gap:12px; }
+    .icon-btn {
+      position:relative; border:none; background:transparent; cursor:pointer;
+      width:40px; height:40px; display:grid; place-items:center; color:var(--ink);
+      transition:.2s background;
+    }
+    .icon-btn:hover { background:#f8fafc; }
+    .icon-btn .badge {
+      position:absolute; top:2px; right:2px;
+      width:16px; height:16px; border-radius:50%;
+      background:var(--err); color:#fff; font-size:10px;
+      display:grid; place-items:center;
+    }
+
+    .popup {
+      position:absolute; top:60px; right:20px; width:300px;
+      background:var(--card); border-radius:12px; box-shadow:var(--shadow);
+      backdrop-filter:saturate(1.1) blur(10px); padding:12px;
+      max-height:400px; overflow-y:auto; z-index:20;
+    }
+    .popup.hidden { display:none; }
+    .popup h4 { font-size:16px; margin-bottom:8px; }
+    .popup .item { display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid #e5e7eb; }
+    .popup .item:last-child { border-bottom:none; }
+    .popup .btn { margin-top:8px; width:100%; padding:10px; border:none; border-radius:8px;
+      background:var(--brand); color:#fff; font-weight:600; cursor:pointer; }
+
+    header.header {
+      padding:16px 20px; display:flex; align-items:center; justify-content:space-between;
+      backdrop-filter:saturate(1.2) blur(6px); background:var(--card);
+    }
+    .time { font-size:18px; font-weight:600; }
+    .status { font-size:14px; color:var(--brand); }
+
+    main.content {
+      padding:20px; display:grid; gap:24px;
+    }
+    .presensi {
+      background:var(--card); border-radius:12px; box-shadow:var(--shadow);
+      padding:16px; display:grid; gap:12px;
+    }
+    .presensi .loc-btn {
+      display:flex; align-items:center; gap:8px; border:none; background:#f3f4f6;
+      padding:10px; border-radius:8px; cursor:pointer; font-size:14px;
+    }
+    .jenis {
+      display:flex; gap:12px;
+    }
+    .jenis input { display:none; }
+    .jenis label {
+      flex:1; text-align:center; padding:10px; border-radius:8px;
+      border:1px solid #e5e7eb; cursor:pointer; transition:.2s background,.2s border;
+    }
+    .jenis input:checked + label {
+      background:var(--brand); border-color:var(--brand); color:#fff;
+    }
+
+    .camera { position:relative; width:100%; padding-top:56.25%; background:#000; border-radius:12px; overflow:hidden; }
+    .camera video, .camera canvas {
+      position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover;
+    }
+
+    .ctrls { display:flex; gap:12px; }
+    .ctrls button {
+      flex:1; padding:12px; border:none; border-radius:8px; font-weight:600; cursor:pointer;
+    }
+    #captureBtn { background:var(--accent); color:#000; }
+    #uploadBtn { background:var(--brand); color:#fff; }
+
+    .riwayat {
+      background:var(--card); border-radius:12px; box-shadow:var(--shadow);
+      padding:16px; max-height:300px; overflow-y:auto;
+    }
+    .riwayat h4 { margin-bottom:12px; font-size:16px; }
+    .riwayat ul { list-style:none; display:grid; gap:8px; }
+    .riwayat li {
+      display:flex; justify-content:space-between; font-size:14px;
+      border-bottom:1px solid #e5e7eb; padding-bottom:4px;
+    }
+
+    .fab {
+      position:fixed; bottom:24px; right:24px; width:56px; height:56px;
+      background:var(--accent); border:none; border-radius:50%; color:#000;
+      font-size:28px; display:grid; place-items:center; cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,.2);
+    }
+
+    footer.footer {
+      padding:12px 20px; text-align:center; font-size:12px; color:var(--muted);
+    }
+
+    .toast {
+      position:fixed; bottom:20px; right:20px; display:grid; gap:8px; z-index:30;
+    }
+    .toast-item {
+      background:#111827; color:#fff; font-size:13px; padding:12px 14px;
+      border-radius:12px; display:flex; align-items:center; gap:10px;
+      box-shadow:0 8px 20px rgba(0,0,0,.2);
+    }
+    .toast-item button {
+      margin-left:auto; background:transparent; border:none; color:#e5e7eb; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="smoke" aria-hidden="true"></div>
+
+  <nav>
+    <div class="logo">Fupa Snack</div>
+    <div class="nav-actions">
+      <button id="notifBtn" class="icon-btn" aria-label="Notifikasi">
+        <span class="material-symbols-outlined">notifications</span>
+        <div id="notifBadge" class="badge">0</div>
+      </button>
+      <button id="profileBtn" class="icon-btn" aria-label="Profil">
+        <span class="material-symbols-outlined">account_circle</span>
+      </button>
+    </div>
+  </nav>
+
+  <div id="notifPopup" class="popup hidden" role="dialog" aria-label="Notifikasi">
+    <h4>Notifikasi</h4>
+    <div id="notifList"></div>
+  </div>
+
+  <div id="profilePopup" class="popup hidden" role="dialog" aria-label="Profil">
+    <h4>Profil Saya</h4>
+    <div class="item">
+      <span class="material-symbols-outlined">person</span>
+      <span id="userName">Loading...</span>
+    </div>
+    <div class="item">
+      <span class="material-symbols-outlined">mail</span>
+      <span id="userEmail">Loading...</span>
+    </div>
+    <div class="item">
+      <span class="material-symbols-outlined">home</span>
+      <span id="userAddress">Loading...</span>
+    </div>
+    <button id="editProfileBtn" class="btn">Ubah Profil</button>
+    <button id="logoutBtn" class="btn" style="background:var(--err); margin-top:6px;">Logout</button>
+  </div>
+
+  <header class="header">
+    <div class="time" id="serverTime">--:--:--</div>
+    <div class="status" id="statusHeader">Memuat status...</div>
+  </header>
+
+  <main class="content">
+    <section class="presensi">
+      <button id="locBtn" class="loc-btn" aria-label="Koordinat">
+        <span class="material-symbols-outlined">place</span>
+        <span id="coords">Klik untuk deteksi lokasi</span>
+      </button>
+      <div class="jenis">
+        <input type="radio" id="type-berangkat" name="jenis" value="berangkat" checked>
+        <label for="type-berangkat">Berangkat</label>
+        <input type="radio" id="type-pulang" name="jenis" value="pulang">
+        <label for="type-pulang">Pulang</label>
+      </div>
+      <div class="camera">
+        <video id="video" muted playsinline></video>
+        <canvas id="canvas" hidden></canvas>
+      </div>
+      <div class="ctrls">
+        <button id="captureBtn">Ambil Foto</button>
+        <button id="uploadBtn" disabled>Upload</button>
+      </div>
+    </section>
+
+    <section class="riwayat">
+      <h4>Riwayat Presensi</h4>
+      <ul id="historyList">
+        <!-- Riwayat akan terisi di sini -->
+      </ul>
+    </section>
+  </main>
+
+  <button id="leaveFab" class="fab" aria-label="Cuti">+</button>
+
+  <div id="leavePopup" class="popup hidden" role="dialog" aria-label="Form Cuti">
+    <h4>Ajukan Cuti/Izin</h4>
+    <div class="item">
+      <label for="leaveType">Jenis</label>
+      <select id="leaveType">
+        <option value="cuti">Cuti</option>
+        <option value="izin">Izin</option>
+        <option value="sakit">Sakit</option>
+      </select>
+    </div>
+    <div class="item">
+      <label for="leaveStart">Mulai</label>
+      <input type="date" id="leaveStart" />
+    </div>
+    <div class="item">
+      <label for="leaveEnd">Selesai</label>
+      <input type="date" id="leaveEnd" />
+    </div>
+    <div class="item">
+      <label for="leaveReason">Alasan</label>
+      <textarea id="leaveReason" rows="3" style="width:100%;"></textarea>
+    </div>
+    <button id="submitLeave" class="btn">Kirim[43dcd9a7-70db-4a1f-b0ae-981daa162054](https://github.com/Malayvasa/blog/tree/8f136574229bb42ca8e5a416118fa03d95bda604/pages%2F_document.js?citationMarker=43dcd9a7-70db-4a1f-b0ae-981daa162054 "1")</
+    <button id="submitLeave" class="btn">Kirim</button>
+  </div>
+
+  <footer class="footer">© Fupa Snack by Annisa &amp; Karomi</footer>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <!-- Shared logic -->
+  <script src="app.js"></script>
+
+  <!-- Page‐specific wiring -->
+  <script>
+  (async ()=>{
+    // UI refs
+    const notifBtn       = document.getElementById('notifBtn');
+    const notifBadge     = document.getElementById('notifBadge');
+    const notifListEl    = document.getElementById('notifList');
+    const notifPopup     = document.getElementById('notifPopup');
+
+    const profileBtn     = document.getElementById('profileBtn');
+    const profilePopup   = document.getElementById('profilePopup');
+    const logoutBtn      = document.getElementById('logoutBtn');
+    const editProfileBtn = document.getElementById('editProfileBtn');
+    const userNameEl     = document.getElementById('userName');
+    const userEmailEl    = document.getElementById('userEmail');
+    const userAddressEl  = document.getElementById('userAddress');
+
+    const serverTimeEl   = document.getElementById('serverTime');
+    const statusHeaderEl = document.getElementById('statusHeader');
+
+    const locBtn         = document.getElementById('locBtn');
+    const coordsEl       = document.getElementById('coords');
+    const jenisInputs    = document.querySelectorAll('input[name="jenis"]');
+    const video          = document.getElementById('video');
+    const canvas         = document.getElementById('canvas');
+    const captureBtn     = document.getElementById('captureBtn');
+    const uploadBtn      = document.getElementById('uploadBtn');
+
+    const historyList    = document.getElementById('historyList');
+
+    const leaveFab       = document.getElementById('leaveFab');
+    const leavePopup     = document.getElementById('leavePopup');
+    const leaveTypeEl    = document.getElementById('leaveType');
+    const leaveStartEl   = document.getElementById('leaveStart');
+    const leaveEndEl     = document.getElementById('leaveEnd');
+    const leaveReasonEl  = document.getElementById('leaveReason');
+    const submitLeaveBtn = document.getElementById('submitLeave');
+
+    let currentUser, currentCoords = null, currentPhotoBlob = null;
+
+    // Helper to show/hide popups
+    function toggle(el) {
+      el.classList.toggle('hidden');
+    }
+
+    // Toast alias
+    const notify = (msg, v='ok', t=3000)=> toast(msg, v, t);
+
+    // Format HH:MM:SS
+    function fmtTime(date){
+      return date.toLocaleTimeString('id-ID', { hour12:false });
+    }
+
+    // Update live server clock + status
+    async function tick(){
+      const now = Time.now();
+      serverTimeEl.textContent = fmtTime(now);
+      const jenis = Array.from(jenisInputs).find(i=>i.checked).value;
+      const ymd = Rules.ymd(now);
+      const ov = await getOverrideForDate(ymd);
+      const st = Rules.getHeaderStatus(now, jenis, ov);
+      statusHeaderEl.textContent = st.header;
+    }
+
+    // Load and display profile
+    async function loadProfile(){
+      const p = await loadMyProfile(currentUser.uid);
+      userNameEl.textContent    = p.name || '-';
+      userEmailEl.textContent   = p.email || '-';
+      userAddressEl.textContent = p.address || '-';
+    }
+
+    // Initialize history listener
+    function initHistory(){
+      col.attendance()
+        .where('uid','==', currentUser.uid)
+        .orderBy('timeServer','desc')
+        .limit(50)
+        .onSnapshot(snap=>{
+          historyList.innerHTML = '';
+          snap.docs.forEach(doc=>{
+            const d = doc.data();
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <span>${d.date} ${new Date(d.timeClient).toLocaleTimeString('id-ID',{hour12:false})}</span>
+              <span>${d.jenis.charAt(0).toUpperCase()+d.jenis.slice(1)}</span>
+              <span>${d.status}</span>
+            `;
+            historyList.appendChild(li);
+          });
+        });
+    }
+
+    // Initialize notifications listener
+    function initNotifs(){
+      const sub = onMyNotifs(currentUser.uid, items=>{
+        notifBadge.textContent = items.filter(i=>!i.read).length;
+        notifListEl.innerHTML = '';
+        items.forEach(i=>{
+          const div = document.createElement('div');
+          div.className = 'item';
+          div.innerHTML = `
+            <span class="${i.type} material-symbols-outlined">${ i.type==='ok'?'task_alt': i.type==='warn'?'warning':'error' }</span>
+            <div style="flex:1">
+              <div>${i.title}</div>
+              <div style="font-size:12px;color:var(--muted)">${ new Date(i.createdAt.toDate()).toLocaleString('id-ID') }</div>
+            </div>
+            <button data-id="${i.id}" class="mark-read">✔</button>
+            <button data-id="${i.id}" class="del-notif">✕</button>
+          `;
+          notifListEl.appendChild(div);
+        });
+        // wire actions
+        notifListEl.querySelectorAll('.mark-read').forEach(b=>{
+          b.onclick=()=> markNotifRead(b.dataset.id);
+        });
+        notifListEl.querySelectorAll('.del-notif').forEach(b=>{
+          b.onclick=()=> deleteNotif(b.dataset.id);
+        });
+      });
+    }
+
+    // Karyawan guard & init
+    auth.onAuthStateChanged(async user=>{
+      if(!user) { location.replace('index.html'); return; }
+      try {
+        await guard('karyawan');
+        currentUser = user;
+        // start camera
+        try { await startCamera(video); } catch(e){ notify(e.message,'warn'); }
+        // load profile, history, notifs
+        await loadProfile();
+        initHistory();
+        initNotifs();
+        // start tick
+        tick();
+        setInterval(tick,1000);
+      } catch {
+        return;
+      }
+    });
+
+    // Toggle popups
+    profileBtn.onclick = ()=> toggle(profilePopup);
+    notifBtn.onclick    = ()=> toggle(notifPopup);
+
+    // Logout
+    logoutBtn.onclick = async ()=>{
+      await auth.signOut();
+      location.replace('index.html');
+    };
+
+    // Edit profile (prompt for name & address)
+    editProfileBtn.onclick = async ()=>{
+      const name = prompt('Nama:', userNameEl.textContent);
+      if(name===null) return;
+      const addr = prompt('Alamat:', userAddressEl.textContent);
+      if(addr===null) return;
+      await updateProfile(currentUser.uid, { name, address: addr });
+      notify('Profil diperbarui','ok');
+      loadProfile();
+    };
+
+    // Geolocation
+    locBtn.onclick = async ()=>{
+      coordsEl.textContent = 'Meminta lokasi…';
+      const res = await getLocation();
+      if(res.ok){
+        currentCoords = res.coords;
+        coordsEl.textContent = `Lat:${res.coords.lat.toFixed(5)}, Lng:${res.coords.lng.toFixed(5)}`;
+      } else {
+        coordsEl.textContent = 'Gagal dapatkan lokasi';
+        notify(res.error,'warn');
+      }
+    };
+
+    // Capture photo
+    captureBtn.onclick = async ()=>{
+      captureBtn.disabled = true;
+      currentPhotoBlob = await capturePhotoCompressed(video);
+      canvas.hidden = false;
+      const ctx = canvas.getContext('2d');
+      const img = await createImageBitmap(currentPhotoBlob);
+      canvas.width = img.width; canvas.height = img.height;
+      ctx.drawImage(img,0,0);
+      uploadBtn.disabled = false;
+      captureBtn.disabled = false;
+    };
+
+    // Upload & save attendance
+    uploadBtn.onclick = async ()=>{
+      if(!currentCoords) return notify('Deteksi lokasi dulu','warn');
+      if(!currentPhotoBlob) return notify('Ambil foto dulu','warn');
+
+      uploadBtn.disabled = true;
+      notify('Mengunggah…','ok',5000);
+      try {
+        // upload to Cloudinary
+        const { url, public_id } = await uploadToCloudinary(currentPhotoBlob);
+        // save Firestore
+        const jenis = Array.from(jenisInputs).find(i=>i.checked).value;
+        await saveAttendanceUnique({
+          uid: currentUser.uid,
+          name: userNameEl.textContent,
+          jenis,
+          coords: currentCoords,
+          photoURL: url,
+          public_id
+        });
+        notify('Presensi tersimpan','ok');
+        // reset photo preview
+        canvas.hidden = true;
+        uploadBtn.disabled = true;
+      } catch(e){
+        notify(e.message,'err',5000);
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    };
+
+    // Leave form toggle
+    leaveFab.onclick = ()=> toggle(leavePopup);
+
+    // Submit Cuti
+    submitLeaveBtn.onclick = async ()=>{
+      const type  = leaveTypeEl.value;
+      const start = leaveStartEl.value;
+      const end   = leaveEndEl.value;
+      const reason= leaveReasonEl.value.trim();
+      if(!start||!end||!reason) return notify('Semua field wajib diisi','warn');
+      if(end < start) return notify('Tanggal selesai harus ≥ mulai','warn');
+
+      await col.leave().add({
+        uid: currentUser.uid,
+        name: userNameEl.textContent,
+        type, start, end, reason,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      // notify admin(s)
+      ADMIN_UIDS.forEach(uid=> pushNotif(uid,{
+        title: 'Permintaan cuti baru',
+        body: `${userNameEl.textContent} ajukan ${type} ${start}→${end}`,
+        type: 'warn'
+      }));
+      notify('Permintaan cuti terkirim','ok');
+      leavePopup.classList.add('hidden');
+    };
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FUPA Snack — Masuk</title>
+  <meta name="theme-color" content="#ffd54f" />
+  <link rel="manifest" href="manifest.webmanifest" />
+
+  <!-- Fonts & Icons (CDN, no local assets) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet" />
+
+  <style>
+    :root{
+      --bg1:#fff7cc; --bg2:#ffffff;
+      --brand:#0a66c2; --accent:#ffb300;
+      --ink:#0f172a; --muted:#64748b;
+      --ok:#16a34a; --warn:#f59e0b; --err:#ef4444;
+      --card:#ffffffcc; --ring:#0a66c233;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink);
+      background: linear-gradient(160deg,var(--bg1),var(--bg2));
+      overflow:hidden;
+      visibility:hidden; /* prevent flash before auth-redirect decision */
+    }
+    .smoke{
+      position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(255,255,255,0.6), transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.5), transparent 60%),
+        radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.6), transparent 60%);
+      animation: float 16s ease-in-out infinite alternate;
+      filter: blur(10px);
+    }
+    @keyframes float { from{transform:translateY(-10px)} to{transform:translateY(10px)} }
+
+    .wrap{display:grid; place-items:center; height:100vh; padding:24px}
+    .card{
+      width:100%; max-width:420px; backdrop-filter: saturate(1.2) blur(8px);
+      background:var(--card); border:1px solid rgba(255,255,255,.6); border-radius:16px;
+      box-shadow: var(--shadow); position:relative; overflow:hidden;
+    }
+    .card::before{
+      content:""; position:absolute; inset:-2px; background:
+        radial-gradient(120px 120px at -10% -10%, rgba(255, 179, 0, .25), transparent 40%),
+        radial-gradient(160px 160px at 110% 110%, rgba(10,102,194,.25), transparent 45%);
+      filter: blur(20px); z-index:0;
+    }
+    .inner{position:relative; z-index:1; padding:28px}
+    .brand{
+      display:flex; align-items:center; gap:12px; margin-bottom:12px;
+    }
+    .brand-logo{
+      width:42px; height:42px; border-radius:10px; background:linear-gradient(135deg,#ffe082,#ffffff);
+      box-shadow: 0 8px 18px rgba(255,179,0,.35), inset 0 0 0 1px rgba(0,0,0,.06);
+      display:grid; place-items:center; color:#f59e0b; font-weight:800;
+      letter-spacing: .5px;
+    }
+    .brand-title{font-size:20px; font-weight:700; letter-spacing: .3px}
+    .subtitle{color:var(--muted); font-size:14px; margin-top:2px}
+
+    form{margin-top:18px; display:grid; gap:14px}
+    .field{display:grid; gap:6px}
+    .label{font-size:13px; color:var(--muted); font-weight:600}
+    .control{
+      position:relative; display:flex; align-items:center;
+      border:1px solid #e5e7eb; background:#fff; border-radius:12px; padding:0 12px;
+      transition:.2s border-color, .2s box-shadow, .2s transform;
+    }
+    .control:focus-within{
+      border-color:var(--brand);
+      box-shadow: 0 0 0 6px var(--ring);
+      transform: translateZ(0);
+    }
+    input{
+      border:none; outline:none; font-size:15px; padding:14px 0; flex:1; background:transparent; color:var(--ink)
+    }
+    .icon-btn{
+      border:none; background:transparent; cursor:pointer; color:var(--muted);
+      display:grid; place-items:center; width:36px; height:36px; border-radius:10px;
+      transition:.2s background,.2s color;
+    }
+    .icon-btn:hover{background:#f8fafc; color:#0f172a}
+    .helper{font-size:12px; color:var(--muted)}
+    .error{font-size:13px; color:var(--err); display:none}
+    .tips{font-size:12px; color:var(--muted); margin-top:2px}
+
+    .actions{margin-top:6px; display:grid; gap:10px}
+    .btn{
+      height:48px; border:none; border-radius:12px; cursor:pointer;
+      font-weight:700; letter-spacing:.2px; display:inline-grid; place-items:center;
+      transition: transform .04s ease, filter .2s ease;
+    }
+    .btn:active{transform: translateY(1px)}
+    .btn-primary{
+      background: linear-gradient(180deg,#0a66c2,#09539b);
+      color:#fff; box-shadow: 0 10px 22px rgba(10,102,194,.35), inset 0 0 0 1px rgba(255,255,255,.25);
+    }
+    .btn-primary[disabled]{filter:grayscale(.2) brightness(.85); cursor:not-allowed}
+    .btn-ghost{
+      background:transparent; border:1px solid #e5e7eb; color:#0f172a;
+    }
+    .row{display:flex; justify-content:space-between; align-items:center; gap:12px}
+    .row .link{font-size:13px; color:var(--brand); text-decoration:none; font-weight:600}
+    .link:hover{text-decoration:underline}
+
+    .status{
+      display:none; gap:8px; align-items:center;
+      font-size:13px; padding:10px 12px; border-radius:10px; margin-top:8px;
+      background:#f0f9ff; color:#0369a1; border:1px solid #e0f2fe;
+    }
+    .spinner{
+      width:18px; height:18px; border-radius:50%;
+      border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff;
+      animation: spin .8s linear infinite; margin-right:8px; display:inline-block; vertical-align:-4px;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .footer{
+      text-align:center; margin-top:14px; color:var(--muted); font-size:12px
+    }
+
+    /* subtle header glow */
+    .halo{
+      position:absolute; inset:0; z-index:0;
+      background: radial-gradient(300px 120px at 50% -10%, rgba(255, 200, 0, .18), transparent 60%);
+      pointer-events:none;
+    }
+
+    /* Toast (for minimal in-app notifications) */
+    .toast{
+      position: fixed; bottom:20px; right:20px; display:grid; gap:8px; z-index:50;
+    }
+    .toast-item{
+      background:#111827; color:#fff; font-size:13px; padding:12px 14px; border-radius:12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.2);
+      display:flex; align-items:flex-start; gap:10px; max-width:320px;
+    }
+    .toast-item .ok{color:#86efac}
+    .toast-item .warn{color:#fde68a}
+    .toast-item .err{color:#fca5a5}
+    .toast-item button{
+      margin-left:auto; background:transparent; border:none; color:#e5e7eb; cursor:pointer; padding:2px 4px;
+    }
+
+    @media (max-width:480px){
+      .inner{padding:22px}
+      .brand-title{font-size:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="smoke" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <div class="card" role="region" aria-labelledby="title">
+      <div class="halo" aria-hidden="true"></div>
+      <div class="inner">
+        <div class="brand">
+          <div class="brand-logo" aria-hidden="true">FS</div>
+          <div>
+            <div id="title" class="brand-title">FUPA Snack</div>
+            <div class="subtitle">Masuk untuk melanjutkan presensi dan administrasi</div>
+          </div>
+        </div>
+
+        <div class="status" id="sessionStatus" aria-live="polite"></div>
+
+        <form id="loginForm" novalidate>
+          <div class="field">
+            <label for="email" class="label">Email</label>
+            <div class="control">
+              <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+              <input id="email" name="email" type="email" inputmode="email" autocomplete="email"
+                     placeholder="nama@fupa.id" required />
+            </div>
+            <div class="helper">Gunakan email terdaftar FUPA (contoh: karomi@fupa.id)</div>
+          </div>
+
+          <div class="field">
+            <div class="row" style="justify-content:space-between">
+              <label for="password" class="label">Kata sandi</label>
+              <a class="link" href="#" id="forgotLink">Lupa kata sandi?</a>
+            </div>
+            <div class="control">
+              <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+              <input id="password" name="password" type="password" autocomplete="current-password"
+                     placeholder="••••••••" minlength="4" required />
+              <button type="button" class="icon-btn" id="togglePwd" aria-label="Tampilkan kata sandi">
+                <span class="material-symbols-outlined" id="togglePwdIcon">visibility</span>
+              </button>
+            </div>
+            <div id="errorBox" class="error" role="alert"></div>
+            <div class="tips">Tips: pastikan Caps Lock tidak aktif.</div>
+          </div>
+
+          <div class="actions">
+            <button id="signInBtn" class="btn btn-primary" type="submit">
+              <span id="btnLabel">Masuk</span>
+            </button>
+            <div class="row" style="justify-content:center">
+              <span class="helper">Belum punya akun?</span>
+              <a class="link" href="#" id="joinInfo">Minta dibuatkan oleh admin</a>
+            </div>
+          </div>
+        </form>
+
+        <div class="footer">© Fupa Snack by Annisa & Karomi</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase SDKs (Compat for simplicity in inline code) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Firebase config (from you)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCt8OGr4HlmbjdxB0cSbm3_vkzm2NA3AXU",
+      authDomain: "presensi-2bbde.firebaseapp.com",
+      projectId: "presensi-2bbde",
+      storageBucket: "presensi-2bbde.firebasestorage.app",
+      messagingSenderId: "853002288058",
+      appId: "1:853002288058:web:a276789416fecf2b733b83",
+      measurementId: "G-Y1F50VXBDD"
+    };
+
+    // Initialize
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Known UIDs (auto role mapping, no default)
+    const ADMIN_UIDS = new Set([
+      "4umvjsqrVhdJpmhXqTPg2iIsqRM2",
+      "rPwiF8tnjwZRg0JcI9ZrXUP6Ofy1"
+    ]);
+    const KARYAWAN_UIDS = new Set([
+      "cfs89ed9eccfaB1u3xGEVwpKDHk2",
+      "dup97Zc5QgP9XHUU354kDdmDeDj2",
+      "iuCabKgZeTPgMecASCh4p8HxcD13",
+      "xfncPACSDDZNKykNR1dhISO6Y7h2"
+    ]);
+
+    // UI refs
+    const body = document.body;
+    const form = document.getElementById('loginForm');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const togglePwd = document.getElementById('togglePwd');
+    const togglePwdIcon = document.getElementById('togglePwdIcon');
+    const signInBtn = document.getElementById('signInBtn');
+    const btnLabel = document.getElementById('btnLabel');
+    const errorBox = document.getElementById('errorBox');
+    const sessionStatus = document.getElementById('sessionStatus');
+    const toastEl = document.getElementById('toast');
+    const forgotLink = document.getElementById('forgotLink');
+    const joinInfo = document.getElementById('joinInfo');
+
+    // Helpers
+    function showToast(message, variant='ok', timeout=3000){
+      const item = document.createElement('div');
+      item.className = 'toast-item';
+      item.innerHTML = `<span class="${variant} material-symbols-outlined" aria-hidden="true">${
+        variant==='ok'?'task_alt':variant==='warn'?'warning':'error'
+      }</span><div>${message}</div><button aria-label="Tutup">✕</button>`;
+      toastEl.appendChild(item);
+      const close = () => { item.remove(); };
+      item.querySelector('button').onclick = close;
+      setTimeout(close, timeout);
+    }
+
+    function setLoading(loading){
+      if(loading){
+        signInBtn.setAttribute('disabled','true');
+        btnLabel.innerHTML = `<span class="spinner"></span>Masuk...`;
+      } else {
+        signInBtn.removeAttribute('disabled');
+        btnLabel.textContent = 'Masuk';
+      }
+    }
+
+    function mapAuthError(code){
+      switch(code){
+        case 'auth/invalid-email': return 'Format email tidak valid.';
+        case 'auth/user-disabled': return 'Akun dinonaktifkan. Hubungi admin.';
+        case 'auth/user-not-found': return 'Akun tidak ditemukan.';
+        case 'auth/wrong-password': return 'Kata sandi salah.';
+        case 'auth/too-many-requests': return 'Terlalu banyak percobaan. Coba lagi nanti.';
+        default: return 'Gagal masuk. Periksa email/kata sandi.';
+      }
+    }
+
+    async function ensureUserDoc(user){
+      const uref = db.collection('users').doc(user.uid);
+      const snap = await uref.get();
+      if(snap.exists){
+        // Backfill missing fields if any
+        const data = snap.data();
+        const updates = {};
+        if(!data.email) updates.email = user.email || null;
+        if(!data.createdAt) updates.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        if(Object.keys(updates).length) await uref.set(updates,{merge:true});
+        return snap.data();
+      }
+      // Determine role by UID (no default)
+      let role = null;
+      if(ADMIN_UIDS.has(user.uid)) role = 'admin';
+      else if(KARYAWAN_UIDS.has(user.uid)) role = 'karyawan';
+      else role = null;
+
+      if(!role){
+        // Create stub without role to avoid "default role"
+        await uref.set({
+          email: user.email || null,
+          name: user.displayName || (user.email ? user.email.split('@')[0] : 'Pengguna'),
+          role: null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }, {merge:true});
+        throw new Error('ROLE_MISSING');
+      }
+
+      await uref.set({
+        email: user.email || null,
+        name: user.displayName || (user.email ? user.email.split('@')[0] : 'Pengguna'),
+        role,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }, {merge:true});
+
+      return {role};
+    }
+
+    async function getRole(user){
+      const snap = await db.collection('users').doc(user.uid).get();
+      if(!snap.exists) return null;
+      const data = snap.data();
+      return data.role || null;
+    }
+
+    function redirectByRole(role){
+      if(role === 'admin'){
+        window.location.replace('admin.html');
+      } else if(role === 'karyawan'){
+        window.location.replace('karyawan.html');
+      } else {
+        // stay
+      }
+    }
+
+    // Password toggle (preserve value)
+    togglePwd.addEventListener('click', ()=>{
+      const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+      password.setAttribute('type', type);
+      togglePwdIcon.textContent = type === 'password' ? 'visibility' : 'visibility_off';
+      togglePwd.setAttribute('aria-label', type==='password' ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi');
+      password.focus({preventScroll:true});
+      password.setSelectionRange(password.value.length, password.value.length);
+    });
+
+    // Forgot password flow
+    forgotLink.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      if(!email.value){
+        errorBox.style.display='block';
+        errorBox.textContent='Masukkan email lalu klik “Lupa kata sandi?”.';
+        email.focus();
+        return;
+      }
+      try{
+        await auth.sendPasswordResetEmail(email.value.trim());
+        showToast('Tautan reset kata sandi telah dikirim ke email Anda. Cek kotak masuk atau spam.', 'ok');
+      }catch(err){
+        showToast(mapAuthError(err.code || ''),'err',4000);
+      }
+    });
+
+    // Join info
+    joinInfo.addEventListener('click', (e)=>{
+      e.preventDefault();
+      showToast('Hubungi admin untuk dibuatkan akun karyawan. Admin akan memetakan role Anda.', 'warn', 4500);
+    });
+
+    // Submit handler
+    let submitting = false;
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(submitting) return;
+      errorBox.style.display='none'; errorBox.textContent='';
+      const mail = email.value.trim();
+      const pass = password.value;
+      if(!mail || !pass){
+        errorBox.style.display='block';
+        errorBox.textContent='Email dan kata sandi wajib diisi.';
+        return;
+      }
+      submitting = true; setLoading(true);
+      try{
+        await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        const cred = await auth.signInWithEmailAndPassword(mail, pass);
+        const user = cred.user;
+
+        // Ensure users/{uid} exists & role assigned if known
+        try{
+          await ensureUserDoc(user);
+        }catch(inner){
+          if(inner && inner.message === 'ROLE_MISSING'){
+            await auth.signOut();
+            errorBox.style.display='block';
+            errorBox.textContent='Akun belum memiliki role. Minta admin memetakan role Anda.';
+            submitting = false; setLoading(false);
+            return;
+          } else {
+            throw inner;
+          }
+        }
+
+        const role = await getRole(user);
+        if(!role){
+          await auth.signOut();
+          errorBox.style.display='block';
+          errorBox.textContent='Akun belum memiliki role. Minta admin memetakan role Anda.';
+          submitting = false; setLoading(false);
+          return;
+        }
+
+        showToast('Masuk berhasil. Mengarahkan...', 'ok', 1200);
+        redirectByRole(role);
+      }catch(err){
+        errorBox.style.display='block';
+        errorBox.textContent = mapAuthError(err.code || '');
+        submitting = false; setLoading(false);
+      }
+    });
+
+    // Auth state: persistent session redirect
+    auth.onAuthStateChanged(async (user)=>{
+      if(user){
+        // Show session banner, then redirect by role
+        sessionStatus.style.display='flex';
+        sessionStatus.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+          <span>Anda masih masuk sebagai <b>${user.email}</b>. Memeriksa peran...</span>`;
+        try{
+          // try ensure doc silently (covers first-time after external signup)
+          try{ await ensureUserDoc(user); }catch(e){}
+          const role = await getRole(user);
+          if(role){ redirectByRole(role); return; }
+          sessionStatus.style.display='flex';
+          sessionStatus.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">info</span>
+            <span>Role belum disetel. Silakan hubungi admin.</span>`;
+        }catch(e){
+          // keep on page with info
+          sessionStatus.style.display='flex';
+          sessionStatus.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">error</span>
+            <span>Gagal memuat peran. Coba masuk ulang.</span>`;
+        }
+      }
+      // Reveal UI after initial auth check to avoid flicker
+      requestAnimationFrame(()=>{ body.style.visibility='visible'; });
+    });
+
+    // Service worker (PWA offline shell)
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', ()=>{
+        navigator.serviceWorker.register('./service-worker.js').catch(()=>{ /* silent */ });
+      });
+    }
+  </script>
+</body>
+</html>

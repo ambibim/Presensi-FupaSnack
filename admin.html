@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FUPA Snack — Admin</title>
+  <meta name="theme-color" content="#ffd54f"/>
+  <link rel="manifest" href="manifest.webmanifest"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg1: #fff7cc; --bg2: #ffffff;
+      --brand: #0a66c2; --accent: #ffb300;
+      --ink: #0f172a; --muted: #64748b;
+      --ok: #16a34a; --warn: #f59e0b; --err: #ef4444;
+      --card: #ffffffcc; --ring: #0a66c233;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    html,body { height:100%; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background: linear-gradient(160deg,var(--bg1),var(--bg2)); color:var(--ink); overflow-x:hidden; }
+    .smoke {
+      position:fixed; inset:0; pointer-events:none;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(255,255,255,0.6), transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.5), transparent 60%),
+        radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.6), transparent 60%);
+      animation: float 16s ease-in-out infinite alternate;
+      filter: blur(10px); z-index:0;
+    }
+    @keyframes float { from{transform:translateY(-10px)} to{transform:translateY(10px)} }
+
+    nav {
+      position:sticky; top:0; z-index:10;
+      backdrop-filter:saturate(1.2) blur(6px);
+      background:var(--card); border-bottom:1px solid rgba(0,0,0,.04);
+      display:flex; justify-content:space-between; align-items:center;
+      padding:0 20px; height:60px; box-shadow:var(--shadow);
+    }
+    .logo { font-size:20px; font-weight:700; color:var(--brand); }
+    .nav-actions { display:flex; gap:12px; }
+    .icon-btn {
+      position:relative; width:40px; height:40px; border:none; background:transparent;
+      display:grid; place-items:center; color:var(--ink); cursor:pointer; transition:.2s background;
+    }
+    .icon-btn:hover { background:#f8fafc; }
+    .icon-btn .badge {
+      position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%;
+      background:var(--err); color:#fff; font-size:10px; display:grid; place-items:center;
+    }
+
+    .popup {
+      position:absolute; top:60px; right:20px; width:320px;
+      background:var(--card); border-radius:12px; box-shadow:var(--shadow);
+      backdrop-filter:saturate(1.1) blur(10px); padding:12px;
+      max-height:400px; overflow-y:auto; z-index:20;
+    }
+    .popup.hidden { display:none; }
+    .popup h4 { font-size:16px; margin-bottom:8px; }
+    .popup .item { display:flex; align-items:center; gap:8px; padding:8px 4px; border-bottom:1px solid #e5e7eb; }
+    .popup .item:last-child { border-bottom:none; }
+    .popup .btn { margin-top:8px; width:100%; padding:10px; border:none; border-radius:8px;
+      background:var(--brand); color:#fff; font-weight:600; cursor:pointer; }
+
+    main.container {
+      padding:20px; display:grid; gap:24px;
+    }
+    .section {
+      background:var(--card); border-radius:12px; box-shadow:var(--shadow);
+      padding:16px; display:grid; gap:12px;
+    }
+    .section h4 { font-size:16px; }
+
+    /* Filter & actions */
+    .filters {
+      display:flex; flex-wrap:wrap; gap:12px; align-items:center;
+    }
+    .filters input, .filters select {
+      padding:8px; border:1px solid #e5e7eb; border-radius:8px;
+    }
+    .filters button {
+      padding:8px 12px; border:none; border-radius:8px; background:var(--brand);
+      color:#fff; cursor:pointer; font-weight:600;
+    }
+
+    table {
+      width:100%; border-collapse:collapse; font-size:14px;
+    }
+    thead th {
+      border-bottom:1px solid #e5e7eb; padding:8px; text-align:left;
+    }
+    tbody td {
+      border-bottom:1px solid #f3f4f6; padding:8px;
+    }
+    tbody tr:last-child td { border-bottom:none; }
+    .action-btn {
+      border:none; background:transparent; cursor:pointer; color:var(--warn);
+      font-size:16px;
+    }
+
+    .fab {
+      position:fixed; bottom:24px; right:24px; width:56px; height:56px;
+      background:var(--accent); border:none; border-radius:50%; color:#000;
+      font-size:28px; display:grid; place-items:center; cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,.2);
+    }
+
+    footer.footer {
+      padding:12px 20px; text-align:center; font-size:12px; color:var(--muted);
+    }
+
+    .toast {
+      position:fixed; bottom:20px; right:20px; display:grid; gap:8px; z-index:30;
+    }
+  </style>
+</head>
+<body>
+  <div class="smoke" aria-hidden="true"></div>
+
+  <nav>
+    <div class="logo">Fupa Admin</div>
+    <div class="nav-actions">
+      <button id="leaveReqBtn" class="icon-btn" aria-label="Permintaan Cuti">
+        <span class="material-symbols-outlined">event_note</span>
+        <div id="leaveReqBadge" class="badge">0</div>
+      </button>
+      <button id="profileBtn" class="icon-btn" aria-label="Profil">
+        <span class="material-symbols-outlined">account_circle</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Leave Requests Popup -->
+  <div id="leaveReqPopup" class="popup hidden" role="dialog" aria-label="Permintaan Cuti">
+    <h4>Permintaan Cuti</h4>
+    <div id="leaveReqList"></div>
+  </div>
+
+  <!-- Profile Popup -->
+  <div id="profilePopup" class="popup hidden" role="dialog" aria-label="Profil Admin">
+    <h4>Profil Saya</h4>
+    <div class="item">
+      <span class="material-symbols-outlined">person</span>
+      <span id="adminName">Loading...</span>
+    </div>
+    <div class="item">
+      <span class="material-symbols-outlined">mail</span>
+      <span id="adminEmail">Loading...</span>
+    </div>
+    <button id="createEmpBtn" class="btn">Buat Akun Karyawan</button>
+    <button id="logoutBtn" class="btn" style="background:var(--err); margin-top:6px;">Logout</button>
+  </div>
+
+  <main class="container">
+    <!-- Riwayat Presensi -->
+    <section class="section">
+      <h4>Riwayat Presensi</h4>
+      <div class="filters">
+        <input type="text" id="filterName" placeholder="Cari nama..." />
+        <input type="date" id="filterStart" />
+        <input type="date" id="filterEnd" />
+        <button id="applyFilter">Terapkan</button>
+        <button id="exportCsv">Ekspor CSV</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Tanggal</th><th>Jam</th><th>Nama</th><th>Jenis</th><th>Status</th><th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTable"></tbody>
+        </table>
+      </div>
+      <button id="overrideFab" class="fab" aria-label="Override">⚙️</button>
+    </section>
+
+    <!-- Pengumuman -->
+    <section class="section">
+      <h4>Buat Pengumuman</h4>
+      <div class="item">
+        <label for="announceDate">Tanggal</label>
+        <input type="date" id="announceDate"/>
+      </div>
+      <div class="item">
+        <label for="announceTime">Waktu</label>
+        <input type="time" id="announceTime"/>
+      </div>
+      <div class="item">
+        <label for="announceDesc">Deskripsi</label>
+        <textarea id="announceDesc" rows="3" style="width:100%;"></textarea>
+      </div>
+      <button id="submitAnnounce" class="btn">Kirim</button>
+      <div class="section" style="max-height:200px; overflow-y:auto;">
+        <h4>Riwayat Pengumuman</h4>
+        <div id="announceList"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">© Fupa Snack by Annisa ❤️ Karomi</footer>
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+  <!-- Shared logic -->
+  <script src="app.js"></script>
+
+  <!-- Admin page script -->
+  <script>
+  (async ()=>{
+    const auth         = firebase.auth();
+    const leaveReqBtn  = document.getElementById('leaveReqBtn');
+    const leaveReqBadge= document.getElementById('leaveReqBadge');
+    const leaveReqList = document.getElementById('leaveReqList');
+    const leaveReqPopup= document.getElementById('leaveReqPopup');
+
+    const profileBtn   = document.getElementById('profileBtn');
+    const profilePopup = document.getElementById('profilePopup');
+    const logoutBtn    = document.getElementById('logoutBtn');
+    const createEmpBtn = document.getElementById('createEmpBtn');
+    const adminName    = document.getElementById('adminName');
+    const adminEmail   = document.getElementById('adminEmail');
+
+    const filterName   = document.getElementById('filterName');
+    const filterStart  = document.getElementById('filterStart');
+    const filterEnd    = document.getElementById('filterEnd');
+    const applyFilter  = document.getElementById('applyFilter');
+    const exportCsvBtn = document.getElementById('exportCsv');
+    const attendanceTable = document.getElementById('attendanceTable');
+    const overrideFab  = document.getElementById('overrideFab');
+
+    const announceDate = document.getElementById('announceDate');
+    const announceTime = document.getElementById('announceTime');
+    const announceDesc = document.getElementById('announceDesc');
+    const submitAnnounce = document.getElementById('submitAnnounce');
+    const announceList = document.getElementById('announceList');
+
+    let adminUser;
+
+    // Popup toggle helper
+    function toggle(el){ el.classList.toggle('hidden'); }
+    const notify = (msg,v='ok',t=3000)=> toast(msg,v,t);
+
+    // Load admin profile
+    async function loadAdminProfile(){
+      const p = await app.loadMyProfile(adminUser.uid);
+      adminName.textContent  = p.name || '-';
+      adminEmail.textContent = p.email || '-';
+    }
+
+    // Guard admin
+    auth.onAuthStateChanged(async u=>{
+      if(!u){ location.replace('index.html'); return; }
+      try{ await app.guard('admin'); }
+      catch{ return; }
+      adminUser = u;
+      loadAdminProfile();
+      initLeaveRequests();
+      initAttendance();
+      initAnnouncements();
+    });
+
+    // Toggle popups
+    leaveReqBtn.onclick    = () => toggle(leaveReqPopup);
+    profileBtn.onclick     = () => toggle(profilePopup);
+
+    // Logout
+    logoutBtn.onclick = async () => {
+      await auth.signOut();
+      location.replace('index.html');
+    };
+
+    // Create new employee
+    createEmpBtn.onclick = async () => {
+      const email = prompt('Email karyawan (contoh: cabang5@fupa.id):');
+      if (!email) return;
+      const password = prompt('Password (min. 6 karakter):');
+      if (!password) return;
+      try {
+        const uid = await app.createEmployee(email.trim(), password);
+        notify(`Akun karyawan dibuat. UID: ${uid}`, 'ok');
+      } catch (e) {
+        notify(e.message || 'Gagal buat akun karyawan', 'err', 5000);
+      }
+    };
+
+    // Initialize Leave Requests listener
+    function initLeaveRequests() {
+      app.col.leave().where('status', '==', 'pending')
+        .onSnapshot(snap => {
+          const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          leaveReqBadge.textContent = items.length;
+          leaveReqList.innerHTML = '';
+          items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'item';
+            div.innerHTML = `
+              <div style="flex:1">
+                <div><b>${item.name}</b> (${item.type})</div>
+                <div style="font-size:12px;color:var(--muted)">${item.start} → ${item.end}</div>
+                <div style="font-size:12px;margin-top:4px">${item.reason}</div>
+              </div>
+              <button data-id="${item.id}" class="btn-appr" style="background:var(--ok);color:#fff;margin-right:4px;">✔</button>
+              <button data-id="${item.id}" class="btn-rej" style="background:var(--err);color:#fff;">✖</button>
+            `;
+            leaveReqList.appendChild(div);
+          });
+
+          // Approve/Reject actions
+          leaveReqList.querySelectorAll('.btn-appr').forEach(btn => {
+            btn.onclick = async () => {
+              const id = btn.dataset.id;
+              await app.col.leave().doc(id).set({ status: 'approved' }, { merge: true });
+              const lr = (await app.col.leave().doc(id).get()).data();
+              await app.pushNotif(lr.uid, {
+                title: 'Cuti disetujui',
+                body: `Cuti ${lr.type} Anda (${lr.start}→${lr.end}) telah disetujui.`,
+                type: 'ok'
+              });
+              notify('Cuti disetujui', 'ok');
+            };
+          });
+          leaveReqList.querySelectorAll('.btn-rej').forEach(btn => {
+            btn.onclick = async () => {
+              const id = btn.dataset.id;
+              await app.col.leave().doc(id).set({ status: 'rejected' }, { merge: true });
+              const lr = (await app.col.leave().doc(id).get()).data();
+              await app.pushNotif(lr.uid, {
+                title: 'Cuti ditolak',
+                body: `Cuti ${lr.type} Anda (${lr.start}→${lr.end}) ditolak.`,
+                type: 'warn'
+              });
+              notify('Cuti ditolak', 'warn');
+            };
+          });
+        });
+    }
+
+    // Initialize Attendance table with filters & delete
+    function initAttendance() {
+      let allData = [];
+      app.col.attendance()
+        .orderBy('timeServer', 'desc')
+        .onSnapshot(snap => {
+          allData = snap.docs.map(d => ({ id: d.id, public_id: d.data().public_id, ...d.data() }));
+          renderAttendance(allData);
+        });
+
+      applyFilter.onclick = () => renderAttendance(allData);
+      exportCsvBtn.onclick = () => {
+        const filtered = allData.filter(r => {
+          const nameOk = !filterName.value || r.name.toLowerCase().includes(filterName.value.trim().toLowerCase());
+          const afterStart = !filterStart.value || r.date >= filterStart.value;
+          const beforeEnd = !filterEnd.value   || r.date <= filterEnd.value;
+          return nameOk && afterStart && beforeEnd;
+        });
+        app.exportToCSV(filtered, 'presensi_export.csv');
+      };
+    }
+
+    function renderAttendance(records) {
+      attendanceTable.innerHTML = '';
+      records.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.date}</td>
+          <td>${new Date(r.timeClient).toLocaleTimeString('id-ID', { hour12:false })}</td>
+          <td>${r.name}</td>
+          <td>${r.jenis.charAt(0).toUpperCase() + r.jenis.slice(1)}</td>
+          <td>${r.status}</td>
+          <td><button data-id="${r.id}" data-pubid="${r.public_id}" class="action-btn">🗑️</button></td>
+        `;
+        attendanceTable.appendChild(tr);
+      });
+      attendanceTable.querySelectorAll('.action-btn').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm('Hapus entri presensi ini?')) return;
+          const id = btn.dataset.id, pub = btn.dataset.pubid;
+          await app.deleteAttendanceEntry(id, pub);
+          notify('Entri presensi dihapus', 'ok');
+        };
+      });
+    }
+
+    // Initialize Announcements
+    function initAnnouncements() {
+      app.onAnnouncements(items => {
+        announceList.innerHTML = '';
+        items.forEach(a => {
+          const div = document.createElement('div');
+          div.className = 'item';
+          div.innerHTML = `
+            <div><b>${a.date} ${a.time}</b></div>
+            <div style="margin-top:4px">${a.description}</div>
+          `;
+          announceList.appendChild(div);
+        });
+      });
+
+      submitAnnounce.onclick = async () => {
+        const date = announceDate.value;
+        const time = announceTime.value;
+        const desc = announceDesc.value.trim();
+        if (!date || !time || !desc) return notify('Semua field pengumuman wajib diisi', 'warn');
+        await app.createAnnouncement({ date, time, description: desc });
+        notify('Pengumuman terkirim', 'ok');
+        announceDate.value = '';
+        announceTime.value = '';
+        announceDesc.value = '';
+      };
+    }
+
+    // Override presensi via prompt
+    overrideFab.onclick = async () => {
+      const mode = prompt('Mode override ("non-presensi" atau "wajib"):', 'non-presensi');
+      if (!mode) return;
+      const start = prompt('Tanggal mulai (YYYY-MM-DD):');
+      if (!start) return;
+      const end = prompt('Tanggal selesai (YYYY-MM-DD):');
+      if (!end) return;
+      const desc = prompt('Deskripsi (opsional):', '');
+      await app.overridePresensi({ mode, start, end, description: desc });
+      notify('Override presensi disimpan', 'ok');
+    };
+
+  })();
+  </script>
+</body>
+</html>
